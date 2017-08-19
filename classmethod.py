@@ -4,15 +4,29 @@ import random
 import urlparse
 
 class Download:
-    def __init__(self,throttle=None,proxies=None,headers=None,user_agent='wspa',cache=None):
+    def __init__(self,throttle=None,proxies=None,num_retries,headers=None,user_agent='wspa',cache=None):
         self.throttle=throttle 
         self.proxies=proxies 
         self.user_agent=user_agent
         self.cache=cache
         self.headers=headers
+        self.num_retries=num_retries
     
     def __call__(self,url):
-        pass  
+        results=None
+        if self.cache:
+            try:
+                results=self.cache['url']
+            except KeyError:
+                pass 
+            else:
+                if self.num_retries>0 and 500<=results['code']<600:
+                    results=None
+        if results is None:
+            results=self.download(url,self.num_retries)
+            if self.cache:
+                self.cache[url]=results
+        return results['html']
     
     
     def download(self,url,num_retries=2):
